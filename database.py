@@ -7,7 +7,10 @@ import sqlite3
 import os
 from typing import List, Dict, Any, Optional
 
-DEFAULT_DB_PATH = os.path.join(os.path.dirname(__file__), "stationery.db")
+DEFAULT_DB_PATH = os.environ.get(
+    "DATABASE_PATH",
+    "/tmp/stationery.db" if os.environ.get("VERCEL") or os.environ.get("AWS_LAMBDA_FUNCTION_NAME") else os.path.join(os.path.dirname(os.path.abspath(__file__)), "stationery.db")
+)
 
 SAMPLE_ITEMS = [
     {
