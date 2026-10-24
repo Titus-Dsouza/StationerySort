@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StationerySort — AI Stationery Organizer</title>
+  <meta name="description" content="A student-friendly stationery inventory manager powered by local open-weight Gemma models via Ollama. Track stock, flag low supplies, and update inventory with natural language.">
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+  <!-- Top Navigation & Branding -->
+  <header class="app-header">
+    <div class="header-inner container">
+      <div class="brand-group">
+        <div class="brand-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 19l7-7 3 3-7 7-3-3z"></path>
+            <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"></path>
+            <path d="M2 2l7.586 7.586"></path>
+            <circle cx="11" cy="11" r="2"></circle>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <div class="title-row">
+            <h1>StationerySort</h1>
+            <span class="badge-pill hacktoberfest-pill">Hacktoberfest '26 • Week 3</span>
+          </div>
+          <p class="subtitle">AI Stationery Organizer for Students — Local Gemma & SQLite</p>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <!-- Live Ollama Status Indicator -->
+        <div id="ollamaStatusPill" class="status-pill status-loading" title="Checking Ollama connection...">
+          <span class="status-dot"></span>
+          <span id="ollamaStatusText">Checking Ollama...</span>
+        </div>
+
+        <button id="aboutAiBtn" class="btn btn-secondary btn-sm" title="Learn about open-source AI integration">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="16" x2="12" y2="12"></line>
+            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+          </svg>
+          Why Local Gemma?
+        </button>
+
+        <button id="resetSampleBtn" class="btn btn-outline btn-sm" title="Reload default student sample stationery items">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="1 4 1 10 7 10"></polyline>
+            <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+          </svg>
+          Reset Sample
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main class="container main-content">
+    
+    <!-- AI Natural Language Inventory Assistant -->
+    <section class="ai-section card">
+      <div class="ai-header">
+        <div class="ai-title-wrap">
+          <div class="ai-icon-wrap">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"></path>
+            </svg>
+          </div>
+          <div>
+            <h2>Natural Language AI Assistant</h2>
+            <p class="section-desc">Type your stationery updates naturally. Local Gemma interprets quantities, matches inventory, and suggests categories before requesting your confirmation.</p>
+          </div>
+        </div>
+        <div id="aiEngineBadge" class="engine-badge">
+          <span class="engine-icon">🦙</span>
+          <span id="aiEngineLabel">Gemma 4 (Local Ollama)</span>
+        </div>
+      </div>
+
+      <!-- Prompt Input Form -->
+      <form id="aiPromptForm" class="ai-form" onsubmit="return false;">
+        <div class="input-with-button">
+          <input 
+            type="text" 
+            id="aiPromptInput" 
+            class="ai-input" 
+            placeholder="e.g. &quot;I bought 10 new blue pens&quot; or &quot;Used 2 sticky note pads&quot;..." 
+            autocomplete="off"
+          />
+          <button type="submit" id="aiSubmitBtn" class="btn btn-primary">
+            <span class="btn-text">Interpret</span>
+            <svg class="btn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="22" y1="2" x2="11" y2="13"></line>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+            </svg>
+            <span class="spinner" style="display: none;"></span>
+          </button>
+        </div>
+
+        <!-- Quick Example Prompts -->
+        <div class="quick-prompts">
+          <span class="quick-label">Try quick prompts:</span>
+          <button type="button" class="chip-btn" data-prompt="I bought 10 new blue pens">✏️ Bought 10 blue pens</button>
+          <button type="button" class="chip-btn" data-prompt="Used 2 sticky note pads">📝 Used 2 sticky note pads</button>
+          <button type="button" class="chip-btn" data-prompt="Found 5 binder clips in my backpack">📎 Found 5 binder clips</button>
+          <button type="button" class="chip-btn" data-prompt="Add 3 A4 Graph Notebooks in Paper & Notes">📓 Add 3 Graph Notebooks</button>
+          <button type="button" class="chip-btn" data-prompt="Used 1 correction tape">⚠️ Used 1 correction tape</button>
+        </div>
+      </form>
+
+      <!-- AI Proposal Confirmation Card (Hidden until generated) -->
+      <div id="proposalCard" class="proposal-card" style="display: none;">
+        <div class="proposal-banner">
+          <div class="banner-title">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            <span>Review Proposed Inventory Change</span>
+          </div>
+          <span id="proposalSourceBadge" class="proposal-source-pill">Gemma via Ollama</span>
+        </div>
+
+        <div class="proposal-body">
+          <div class="proposal-grid">
+            <div class="proposal-detail">
+              <span class="field-label">Proposed Action</span>
+              <span id="proposalActionBadge" class="action-pill action-add">ADD STOCK</span>
+            </div>
+            <div class="proposal-detail">
+              <span class="field-label">Target Item</span>
+              <span id="proposalItemName" class="highlight-val">Blue Gel Pens (0.5mm)</span>
+            </div>
+            <div class="proposal-detail">
+              <span class="field-label">Category</span>
+              <span id="proposalCategory" class="cat-pill">Writing</span>
+            </div>
+            <div class="proposal-detail">
+              <span class="field-label">Stock Transition</span>
+              <div class="stock-transition">
+                <span id="proposalCurrentQty" class="qty-from">2 pcs</span>
+                <span class="arrow">➔</span>
+                <span id="proposalNewQty" class="qty-to">12 pcs</span>
+                <span id="proposalDelta" class="delta-badge">(+10)</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Low Stock Alert Banner if proposed quantity is low -->
+          <div id="proposalLowStockWarning" class="alert-box alert-warning" style="display: none;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+              <line x1="12" y1="9" x2="12" y2="13"></line>
+              <line x1="12" y1="17" x2="12.01" y2="17"></line>
+            </svg>
+            <span><strong>Notice:</strong> This change will put or keep this stationery item below its minimum threshold!</span>
+          </div>
+
+          <!-- Friendly Explanation from Gemma -->
+          <div class="proposal-explanation">
+            <span class="quote-icon">“</span>
+            <p id="proposalExplanationText">Gemma identified adding 10 blue pens to your existing stock.</p>
+          </div>
+
+          <!-- Confirmation Action Buttons -->
+          <div class="proposal-footer">
+            <div class="proposal-note">
+              <span>⚠️ No changes are applied until you confirm.</span>
+            </div>
+            <div class="btn-group">
+              <button type="button" id="proposalDeclineBtn" class="btn btn-ghost">
+                Decline & Discard
+              </button>
+              <button type="button" id="proposalConfirmBtn" class="btn btn-success">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                Confirm & Apply Update
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Dashboard Statistics Overview -->
+    <section class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon-wrap icon-primary">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+            <line x1="8" y1="21" x2="16" y2="21"></line>
+            <line x1="12" y1="17" x2="12" y2="21"></line>
+          </svg>
+        </div>
+        <div class="stat-content">
+          <span class="stat-label">Unique Items</span>
+          <span id="statTotalItems" class="stat-number">12</span>
+          <span class="stat-sub">Tracked Stationery</span>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon-wrap icon-info">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="16.5" y1="9.4" x2="7.5" y2="4.21"></line>
+            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+            <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+            <line x1="12" y1="22.08" x2="12" y2="12"></line>
+          </svg>
+        </div>
+        <div class="stat-content">
+          <span class="stat-label">Total Units</span>
+          <span id="statTotalUnits" class="stat-number">58</span>
+          <span class="stat-sub">Across All Supplies</span>
+        </div>
+      </div>
+
+      <div class="stat-card stat-card-alert" id="lowStockStatCard" role="button" title="Click to filter low stock items">
+        <div class="stat-icon-wrap icon-alert">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+            <line x1="12" y1="9" x2="12" y2="13"></line>
+            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+          </svg>
+        </div>
+        <div class="stat-content">
+          <span class="stat-label">Needs Restocking</span>
+          <span id="statLowStock" class="stat-number alert-num">6</span>
+          <span class="stat-sub">Quantity &le; Min Level (Click)</span>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon-wrap icon-accent">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
+            <line x1="7" y1="7" x2="7.01" y2="7"></line>
+          </svg>
+        </div>
+        <div class="stat-content">
+          <span class="stat-label">Categories</span>
+          <span id="statCategories" class="stat-number">5</span>
+          <span class="stat-sub">Organized Groups</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Controls Bar: Search, Category Filters, and Add Item -->
+    <section class="controls-section">
+      <div class="search-and-filters">
+        <!-- Live Search -->
+        <div class="search-box">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input 
+            type="text" 
+            id="searchInput" 
+            placeholder="Search stationery by name, location, or notes..." 
+          />
+          <button id="clearSearchBtn" class="clear-btn" style="display: none;">&times;</button>
+        </div>
+
+        <!-- Stock Status Filter -->
+        <div class="select-filter-wrap">
+          <label for="statusFilter" class="sr-only">Stock Status</label>
+          <select id="statusFilter" class="custom-select">
+            <option value="all">All Stock Statuses</option>
+            <option value="low_stock">⚠️ Needs Restock (&le; Min)</option>
+            <option value="in_stock">✅ Well Stocked</option>
+          </select>
+        </div>
+
+        <!-- Add Item Manually Button -->
+        <button id="openAddItemModalBtn" class="btn btn-primary add-item-btn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          Add Item
+        </button>
+      </div>
+
+      <!-- Category Filter Pills -->
+      <div class="category-pills" id="categoryPillsContainer">
+        <button class="cat-chip active" data-category="all">All Items</button>
+        <!-- Populated dynamically via JS -->
+      </div>
+    </section>
+
+    <!-- Inventory Grid / Cards -->
+    <section class="inventory-section">
+      <div class="section-top">
+        <div class="results-info">
+          <h3 id="inventoryTitle">Stationery Inventory</h3>
+          <span id="resultsCountBadge" class="count-badge">12 items</span>
+        </div>
+      </div>
+
+      <!-- Loading State -->
+      <div id="itemsLoading" class="items-loading" style="display: none;">
+        <div class="spinner"></div>
+        <p>Loading stationery inventory...</p>
+      </div>
+
+      <!-- Empty State -->
+      <div id="emptyState" class="empty-state" style="display: none;">
+        <div class="empty-icon">📁</div>
+        <h4>No stationery items found</h4>
+        <p>Try clearing your search or category filter, or add a new stationery item.</p>
+        <button id="emptyResetBtn" class="btn btn-outline btn-sm">Reset Filters</button>
+      </div>
+
+      <!-- Items Grid -->
+      <div class="items-grid" id="itemsGrid">
+        <!-- Rendered by JavaScript -->
+      </div>
+    </section>
+  </main>
+
+  <!-- Add / Edit Item Modal -->
+  <div id="itemModal" class="modal-backdrop" style="display: none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="modalTitle">Add Stationery Item</h3>
+        <button id="closeItemModalBtn" class="close-modal-btn">&times;</button>
+      </div>
+      <form id="itemForm" class="modal-form" onsubmit="return false;">
+        <input type="hidden" id="formItemId" value="">
+
+        <div class="form-group">
+          <label for="formItemName">Item Name <span class="required">*</span></label>
+          <input type="text" id="formItemName" class="form-input" placeholder="e.g. Blue Gel Pens (0.5mm)" required>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="formItemCategory">Category</label>
+            <select id="formItemCategory" class="form-input">
+              <option value="Writing">Writing</option>
+              <option value="Paper & Notes">Paper & Notes</option>
+              <option value="Correction & Tools">Correction & Tools</option>
+              <option value="Fasteners & Clips">Fasteners & Clips</option>
+              <option value="Adhesives">Adhesives</option>
+              <option value="Desk Accessories">Desk Accessories</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="formItemUnit">Unit</label>
+            <input type="text" id="formItemUnit" class="form-input" placeholder="e.g. pcs, pack, pads, box">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="formItemQuantity">Current Quantity <span class="required">*</span></label>
+            <input type="number" id="formItemQuantity" class="form-input" min="0" value="1" required>
+          </div>
+          <div class="form-group">
+            <label for="formItemMinStock">Minimum Stock Alert Level <span class="required">*</span></label>
+            <input type="number" id="formItemMinStock" class="form-input" min="0" value="2" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="formItemLocation">Storage Location</label>
+          <input type="text" id="formItemLocation" class="form-input" placeholder="e.g. Desk Drawer, Pencil Case, Backpack">
+        </div>
+
+        <div class="form-group">
+          <label for="formItemNotes">Notes / Description</label>
+          <textarea id="formItemNotes" class="form-input textarea" rows="2" placeholder="e.g. 0.5mm quick drying ink for study notes"></textarea>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" id="cancelModalBtn" class="btn btn-ghost">Cancel</button>
+          <button type="submit" id="saveItemBtn" class="btn btn-primary">Save Item</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- About Open-Source AI & Gemma Modal -->
+  <div id="aboutModal" class="modal-backdrop" style="display: none;">
+    <div class="modal-card about-card">
+      <div class="modal-header">
+        <div class="about-title-group">
+          <span class="about-badge">Hacktoberfest 2026: Slow & Steady</span>
+          <h3>Open-Weight Gemma AI Architecture</h3>
+        </div>
+        <button id="closeAboutModalBtn" class="close-modal-btn">&times;</button>
+      </div>
+      <div class="about-content">
+        <div class="about-section">
+          <h4>🌟 Why Local Open-Weight Inference?</h4>
+          <p>StationerySort integrates Google's open-weight <strong>Gemma</strong> models locally via <strong>Ollama</strong>. Rather than sending student inventory data across the internet to paid third-party APIs, local execution provides:</p>
+          <ul>
+            <li><strong>Model Choice & Freedom:</strong> Swap seamlessly between <code>gemma4:12b</code>, <code>gemma2:2b</code>, or other open-weight models based on device capability.</li>
+            <li><strong>Zero Cost & No Rate Limits:</strong> Completely free to run with no API keys, credit cards, or subscription tiers.</li>
+            <li><strong>Privacy First:</strong> Student supplies, personal notes, and room/desk locations stay strictly on the user's computer.</li>
+          </ul>
+        </div>
+
+        <div class="about-section">
+          <h4>🛡️ Human-in-the-Loop Confirmation</h4>
+          <p>Local AI models are powerful assistants, but in inventory systems, accidental edits cause stock discrepancies. StationerySort enforces a strict <strong>Proposal & Confirm</strong> workflow: Gemma interprets natural language into structured actions, and changes are only committed to SQLite once the student reviews and confirms them.</p>
+        </div>
+
+        <div class="about-section">
+          <h4>🔄 Graceful Fallback Engine</h4>
+          <p>If Ollama is not currently running or the model is still loading, StationerySort's built-in heuristic rule engine immediately takes over. The student can still manage their supplies without interruption, and the UI transparently signals whether the proposal came from Gemma or the fallback engine.</p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="aboutGotItBtn" class="btn btn-primary">Got It</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <!-- Footer -->
+  <footer class="app-footer container">
+    <div class="footer-inner">
+      <p><strong>StationerySort</strong> — Built for Hacktoberfest Open-Source AI Challenge Week 3: “Slow and Steady”.</p>
+      <p class="footer-tech">Tech Stack: Python Flask • SQLite • Vanilla JS & CSS3 • Open-Weight Gemma via Ollama.</p>
+    </div>
+  </footer>
+
+  <!-- Main JavaScript File -->
+  <script src="/static/js/app.js"></script>
+</body>
+</html>
