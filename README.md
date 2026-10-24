@@ -81,8 +81,8 @@ ollama run gemma4:12b
 
 ### 3. Clone and Setup Environment
 ```bash
-git clone https://github.com/your-username/stationerysort.git
-cd stationerysort
+git clone https://github.com/Titus-Dsouza/StationerySort.git
+cd StationerySort
 
 # Create virtual environment
 python3 -m venv venv
